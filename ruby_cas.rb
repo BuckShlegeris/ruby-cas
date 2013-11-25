@@ -1,32 +1,16 @@
+require "magic"
+
 class Expression
-
-end
-
-# Make setters, getters, equality testing, initialize.
-def magic_metaprogram(*args)
-
-  # Initialize
-  inside_string = args.map do |arg|
-    "@#{arg} = #{arg};"
-  end.join(" ")
-
-  self.class_eval "def initialize(#{args.join(",")}); #{inside_string}; end"
-
-  # Equality testing
-  inside_string = args.map do |arg|
-    "return false unless #{arg} == other.#{arg};"
-  end.join(" ")
-  self.class_eval "def ==(other); #{inside_string}; return true; end"
-
-  args.each do |arg|
-    # Getter
-    self.class_eval("def #{arg}; @#{arg}; end")
-
-    # Setter
-    self.class_eval("def #{arg}=(x); @#{arg}=x; end")
+  def normalize
+    self
   end
 
+
+
 end
+
+
+
 
 class Variable < Expression
   magic_metaprogram :name
@@ -47,17 +31,34 @@ end
 class Sum < Expression
   magic_metaprogram :terms
 
-  def initialize(*terms)
-    @terms = terms
-  end
-
   def inspect
     terms.map(&:inspect).join("+")
   end
 end
 
-v = Variable.new("x")
-q = Variable.new("x")
-c = Constant.new(45)
-s = Sum.new(v, c)
-p s
+class Product < Expression
+  magic_metaprogram :coefficient, :terms
+
+  def inspect
+    return terms.map {|x| "(#{x.inspect})"}.join("*") if coefficient == 1
+    coefficient.inspect + "*" + terms.map {|x| "(#{x.inspect})"}.join("*")
+  end
+end
+
+def var(x)
+  Variable.new(x)
+end
+
+def const(x)
+  Constant.new(x)
+end
+
+def sum(*args)
+  Sum.new(args)
+end
+
+def product(coefficient,*args)
+  Product.new(coefficient, args)
+end
+
+p product(1,sum(var(:x),var(:y)),var(:z))
